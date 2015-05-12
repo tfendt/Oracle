@@ -1,0 +1,39 @@
+#Usage
+# ansible-playbook InstallOracleJVMPSUPatche.yml --extra-vars "hosts=[EnterHosts] JVMPSUZipFile=[JVMPSUZip] JVMPSUUnzipFolder=[JVMPSUFolder] postInstallFile=[postInstallFile]"
+---
+- hosts: '{{ hosts }}'
+  gather_facts: no
+  vars:
+    patchDir: "/opt/Patch"
+    oracleHome: "/opt/app/oracle/product/11.2.0/dbhome_1"
+  tasks:
+  
+  - name: copy patch
+    copy: src=../Files/{{ item }} dest={{ patchDir }}
+    with_items:
+     - '{{ JVMPSUZipFile }}'
+
+  - name: unzip JVMPSU patch
+    unarchive: src='{{ patchDir }}'/'{{ JVMPSUZipFile }}' dest='{{ patchDir }}' copy=no
+
+  - name: OPatch Check PreReqs
+    shell: su - oracle -c "cd '{{ patchDir }}'/'{{ JVMPSUUnzipFolder }}'; '{{ oracleHome }}'/OPatch/opatch prereq CheckConflictAgainstOHWithDetail -ph ./"
+    register: conflict_detection
+    failed_when: "'Prereq \"checkConflictAgainstOHWithDetail\" passed.' not in conflict_detection.stdout"
+
+  - name: Shutdown Oracle Instances
+    shell: su - oracle -c "'{{ oracleHome }}'/bin/dbshut '{{ oracleHome }}'; '{{ oracleHome }}'/bin/emctl stop dbconsole; '{{ oracleHome }}'/bin/lsnrctl stop"
+
+  - name: Install JVMPSU Patch
+    shell: su - oracle -c "cd '{{ patchDir }}'/'{{ JVMPSUUnzipFolder }}'; '{{ oracleHome }}'/OPatch/opatch apply"
+    register: apply_psu
+    failed_when: "'Composite patch '{{ JVMPSUUnzipFolder }}'  successfully applied.' not in apply_psu.stdout"
+
+   - name: Copy post install script
+     copy: src=../Files/'{{ postInstallFile }}' dest='{{ oracleHome }}'/sqlpatch/'{{ JVMPSUUnzipFolder }}' owner=oracle
+
+   - name: Run PostInstall
+     shell: su - oracle -c "cd '{{ oracleHome }}'/sqlpatch/'{{ JVMPSUUnzipFolder }}'; sqlplus /nolog @'{{ postInstallFile }}'"
+
+  - name: Startup Oracle Instance
+    shell: su - oracle -c "'{{ oracleHome }}'/bin/lsnrctl start; '{{ oracleHome }}'/bin/dbstart '{{ oracleHome }}'; '{{ oracleHome }}'/bin/emctl start dbconsole;"

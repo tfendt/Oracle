@@ -5,4 +5,4 @@
   tasks:
 
   - name: sqlplus login
-    shell: su - oracle -c 'sqlplus / as sysdba @/data/import/Exit.sql'
+    shell: su - oracle -c "sqlplus /nolog @/data/import/Exit.sql"
