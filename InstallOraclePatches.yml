@@ -1,0 +1,35 @@
+---
+- hosts: '{{ hosts }}'
+  gather_facts: no
+  vars:
+    patchDir: "/opt/Patch"
+    oracleHome: "/opt/app/oracle/product/11.2.0/dbhome_1"
+  tasks:
+  
+  - name: copy patches
+    copy: src=Files/{{ item }} dest={{ patchDir }}
+    with_items:
+     - '{{ DBPSUZipFile }}'
+     - '{{ JVMPSUZipFile }}'
+
+  #- name: unzip DBPSU patch
+  #  unarchive: src='{{ patchDir }}'/'{{ DBPSUZipFile }}' dest='{{ patchDir }}' copy=no
+
+  #- name: unzip JVMPSU patch
+  #  unarchive: src='{{ patchDir }}'/'{{ JVMPSUZipFile }}' dest='{{ patchDir }}' copy=no
+
+  - name: OPatch Check PreReqs
+    action: shell cd '{{ patchDir }}'/'{{ DBPSUUnzipFolder }}'; '{{ oracleHome }}'/OPatch/opatch prereq CheckConflictAgainstOHWithDetail -ph ./
+    register: conflict_detection
+    failed_when: "'Prereq \"checkConflictAgainstOHWithDetail\" passed.' not in conflict_detection.stdout"
+
+  - name: Shutdown Oracle Instances
+    action: shell '{{ oracleHome }}'/bin/dbshut '{{ oracleHome }}'; '{{ oracleHome }}'/bin/emctl stop dbconsole; '{{ oracleHome }}'/bin/lsnrctl stop
+
+  - name: Install DBPSU Patch
+    action: shell cd '{{ patchDir }}'/'{{ DBPSUUnzipFolder }}'; '{{ oracleHome }}'/OPatch/opatch apply
+    register: apply_psu
+    failed_when: "'Composite patch '{{ DBPSUUnzipFolder }}'  successfully applied.' not in apply_psu.stdout"
+
+  - name: Startup Oracle Instances
+    action: shell '{{ oracleHome }}'/bin/lsnrctl start; '{{ oracleHome }}'/bin/dbstart '{{ oracleHome }}'; '{{ oracleHome }}'/bin/emctl start dbconsole;

@@ -1,0 +1,15 @@
+---
+- hosts: '{{ hosts }}'
+  gather_facts: no
+  vars:
+    my_env:
+      ORACLE_HOME: "/opt/app/oracle/product/11.2.0/dbhome_1"
+
+  tasks:
+
+  - name: sqlplus login
+    action: shell echo $ORACLE_HOME
+    environment: my_env
+
+  - debug: msg="{{ lookup('env', 'ORACLE_HOME') }}"
+    environment: my_env
