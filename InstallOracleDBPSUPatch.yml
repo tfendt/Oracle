@@ -25,12 +25,12 @@
     shell: su - oracle -c "'{{ oracleHome }}'/bin/dbshut '{{ oracleHome }}'; '{{ oracleHome }}'/bin/emctl stop dbconsole; '{{ oracleHome }}'/bin/lsnrctl stop"
 
   - name: Install DBPSU Patch
-    shell: su - oracle -c "cd '{{ patchDir }}'/'{{ DBPSUUnzipFolder }}'; '{{ oracleHome }}'/OPatch/opatch apply"
+    shell: su - oracle -c "cd '{{ patchDir }}'/'{{ DBPSUUnzipFolder }}'; '{{ oracleHome }}'/OPatch/opatch apply -slient"
     register: apply_psu
     failed_when: "'Composite patch '{{ DBPSUUnzipFolder }}'  successfully applied.' not in apply_psu.stdout"
 
   - name: Startup Oracle Instances
-    shell: su - oracle -c "'{{ oracleHome }}'/bin/lsnrctl start; '{{ oracleHome }}'/bin/dbstart '{{ oracleHome }}'; '{{ oracleHome }}'/bin/emctl start dbconsole;"
+    shell: su - oracle -c "'{{ oracleHome }}'/bin/lsnrctl start; '{{ oracleHome }}'/bin/dbstart '{{ oracleHome }}'; '{{ oracleHome }}'/bin/emctl start dbconsole"
 
-   - name: Run CatBundle
-     shell: su - oracle -c "cd '{{ oracleHome }}'/rdbms/admin; echo exit | sqlplus / as sysdba @catbundle.sql psu apply;"
+  - name: Run CatBundle
+    shell: su - oracle -c "cd '{{ oracleHome }}'/rdbms/admin; echo exit | sqlplus / as sysdba @catbundle.sql psu apply"

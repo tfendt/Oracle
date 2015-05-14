@@ -1,5 +1,5 @@
 #Usage
-# ansible-playbook InstallOracleJVMPSUPatche.yml --extra-vars "hosts=[EnterHosts] JVMPSUZipFile=[JVMPSUZip] JVMPSUUnzipFolder=[JVMPSUFolder] postInstallFile=[postInstallFile]"
+# ansible-playbook InstallOracleJVMPSUPatch.yml --extra-vars "hosts=[EnterHosts] JVMPSUZipFile=[JVMPSUZip] JVMPSUUnzipFolder=[JVMPSUFolder] postInstallFile=[postInstallFile]"
 ---
 - hosts: '{{ hosts }}'
   gather_facts: no
@@ -24,16 +24,16 @@
   - name: Shutdown Oracle Instances
     shell: su - oracle -c "'{{ oracleHome }}'/bin/dbshut '{{ oracleHome }}'; '{{ oracleHome }}'/bin/emctl stop dbconsole; '{{ oracleHome }}'/bin/lsnrctl stop"
 
-  - name: Install JVMPSU Patch
-    shell: su - oracle -c "cd '{{ patchDir }}'/'{{ JVMPSUUnzipFolder }}'; '{{ oracleHome }}'/OPatch/opatch apply"
-    register: apply_psu
-    failed_when: "'Composite patch '{{ JVMPSUUnzipFolder }}'  successfully applied.' not in apply_psu.stdout"
+  #- name: Install JVMPSU Patch
+  #  shell: su - oracle -c "cd '{{ patchDir }}'/'{{ JVMPSUUnzipFolder }}'; '{{ oracleHome }}'/OPatch/opatch apply"
+  #  register: apply_psu
+  #  failed_when: "'Composite patch '{{ JVMPSUUnzipFolder }}'  successfully applied.' not in apply_psu.stdout"
 
-   - name: Copy post install script
-     copy: src=../Files/'{{ postInstallFile }}' dest='{{ oracleHome }}'/sqlpatch/'{{ JVMPSUUnzipFolder }}' owner=oracle
+  # - name: Copy post install script
+   #  copy: src=../Files/'{{ postInstallFile }}' dest='{{ oracleHome }}'/sqlpatch/'{{ JVMPSUUnzipFolder }}' owner=oracle
 
-   - name: Run PostInstall
-     shell: su - oracle -c "cd '{{ oracleHome }}'/sqlpatch/'{{ JVMPSUUnzipFolder }}'; sqlplus /nolog @'{{ postInstallFile }}'"
+#   - name: Run PostInstall
+ #    shell: su - oracle -c "cd '{{ oracleHome }}'/sqlpatch/'{{ JVMPSUUnzipFolder }}'; sqlplus /nolog @'{{ postInstallFile }}'"
 
-  - name: Startup Oracle Instance
-    shell: su - oracle -c "'{{ oracleHome }}'/bin/lsnrctl start; '{{ oracleHome }}'/bin/dbstart '{{ oracleHome }}'; '{{ oracleHome }}'/bin/emctl start dbconsole;"
+  #- name: Startup Oracle Instance
+  #  shell: su - oracle -c "'{{ oracleHome }}'/bin/lsnrctl start; '{{ oracleHome }}'/bin/dbstart '{{ oracleHome }}'; '{{ oracleHome }}'/bin/emctl start dbconsole;"
