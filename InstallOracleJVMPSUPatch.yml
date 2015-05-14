@@ -22,18 +22,30 @@
     failed_when: "'Prereq \"checkConflictAgainstOHWithDetail\" passed.' not in conflict_detection.stdout"
 
   - name: Shutdown Oracle Instances
-    shell: su - oracle -c "'{{ oracleHome }}'/bin/dbshut '{{ oracleHome }}'; '{{ oracleHome }}'/bin/emctl stop dbconsole; '{{ oracleHome }}'/bin/lsnrctl stop"
+    shell: su - oracle -c "'{{ oracleHome }}'/bin/dbshut '{{ oracleHome }}'"
 
-  #- name: Install JVMPSU Patch
-  #  shell: su - oracle -c "cd '{{ patchDir }}'/'{{ JVMPSUUnzipFolder }}'; '{{ oracleHome }}'/OPatch/opatch apply"
-  #  register: apply_psu
-  #  failed_when: "'Composite patch '{{ JVMPSUUnzipFolder }}'  successfully applied.' not in apply_psu.stdout"
+  - name: Shutdown management concole
+    shell: su - oracle -c "'{{ oracleHome }}'/bin/emctl stop dbconsole"
 
-  # - name: Copy post install script
-   #  copy: src=../Files/'{{ postInstallFile }}' dest='{{ oracleHome }}'/sqlpatch/'{{ JVMPSUUnzipFolder }}' owner=oracle
+  - name: Shutdown listener
+    shell: su - oracle -c "'{{ oracleHome }}'/bin/lsnrctl stop"
 
-#   - name: Run PostInstall
- #    shell: su - oracle -c "cd '{{ oracleHome }}'/sqlpatch/'{{ JVMPSUUnzipFolder }}'; sqlplus /nolog @'{{ postInstallFile }}'"
+  - name: Install JVMPSU Patch
+    shell: su - oracle -c "cd '{{ patchDir }}'/'{{ JVMPSUUnzipFolder }}'; '{{ oracleHome }}'/OPatch/opatch apply -slient"
+    register: apply_psu
+    failed_when: "'Composite patch '{{ JVMPSUUnzipFolder }}'  successfully applied.' not in apply_psu.stdout"
 
-  #- name: Startup Oracle Instance
-  #  shell: su - oracle -c "'{{ oracleHome }}'/bin/lsnrctl start; '{{ oracleHome }}'/bin/dbstart '{{ oracleHome }}'; '{{ oracleHome }}'/bin/emctl start dbconsole;"
+  - name: Copy post install script
+    copy: src=../Files/'{{ postInstallFile }}' dest='{{ oracleHome }}'/sqlpatch/'{{ JVMPSUUnzipFolder }}' owner=oracle
+
+  - name: Run PostInstall
+    shell: su - oracle -c "cd '{{ oracleHome }}'/sqlpatch/'{{ JVMPSUUnzipFolder }}'; sqlplus /nolog @'{{ postInstallFile }}'"
+
+  - name: Startup Listener
+    shell: su - oracle -c "'{{ oracleHome }}'/bin/lsnrctl start"
+
+  - name: Startup Oracle Instances
+    shell: su - oracle -c "'{{ oracleHome }}'/bin/dbstart '{{ oracleHome }}'"
+
+  - name: Startup management console
+    shell: su - oracle -c "'{{ oracleHome }}'/bin/emctl start dbconsole"
